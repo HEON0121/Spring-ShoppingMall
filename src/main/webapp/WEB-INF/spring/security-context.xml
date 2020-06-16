@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<bean id="customAccessDenied"
+	class="org.zerock.security.CustomAccessDeniedHandler">
+	</bean>
+	<!-- <bean id="customLoginSuccess"
+	class="org.zerock.security.CustomLoginSuccessHandler">
+	</bean> --> 
+	<bean id="bcryptPasswordEncoder"
+	class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+	</bean>
+	
+	<!-- <bean id="customUserDetailsService"
+	class="org.zerock.security.CustomUserDetailsService">
+	</bean> --> 
+			
+	<security:http>
+		<security:intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')"/>
+		
+		<security:intercept-url pattern="/member/**" access="hasRole('ROLE_MEMBER')"/>
+		
+		<security:intercept-url pattern="/customLogin" access="permitAll"/>
+		
+		<security:intercept-url pattern="/**" access="permitAll"/>
+		
+		<security:intercept-url pattern="/board/**" access="permitAll"/>
+		
+		<security:access-denied-handler ref="customAccessDenied"/>
+		
+		<security:form-login login-page="/customLogin"
+							 login-processing-url="/login" 
+							 default-target-url="/"
+							 username-parameter="username"
+							 password-parameter="password"
+							 authentication-failure-url="/customLogin?error"
+							 always-use-default-target="true"/>
+		
+		<security:logout logout-url="/logout" 
+						 logout-success-url=""
+						 invalidate-session="true" 
+						 delete-cookies="remember-me,JSESSION_ID"/>
+		
+		<security:remember-me data-source-ref="dataSource" remember-me-parameter="remember-me" token-validity-seconds="604800"/>
+		
+	</security:http>		
+		
+	<security:authentication-manager>
+		<security:authentication-provider>
+		<security:jdbc-user-service data-source-ref="dataSource"
+									users-by-username-query="SELECT userid, userpw, enabled from shop_member where userid = ?"
+									authorities-by-username-query="SELECT userid, auth from shop_member_auth where userid = ? "/>							
+		<security:password-encoder
+			ref="bcryptPasswordEncoder"/>
+		</security:authentication-provider>
+	</security:authentication-manager>
+</beans>

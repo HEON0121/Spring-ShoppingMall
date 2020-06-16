@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.AdminMapper">
+
+<!-- 카테고리 -->
+<select id="category" resultType = "org.zerock.domain.CategoryVO">
+select cateCode, cateName 
+from goods_category 
+</select>
+
+<!-- 상품 등록  -->
+<insert id="register">
+insert into shop_goods (
+cateCode,
+gdsName, 
+gdsPrice,
+gdsStock,
+gdsImg,
+gdsThumbnail,
+gdsInfo
+)
+values (
+#{cateCode},
+#{gdsName},
+#{gdsPrice},
+#{gdsStock},
+#{gdsImg},
+#{gdsThumbnail},
+#{gdsInfo}
+)
+</insert>
+<!-- 상품 수정 -->
+<update id="modify">
+update shop_goods 
+set
+gdsName = #{gdsName},
+cateCode = #{cateCode},
+gdsPrice = #{gdsPrice},
+gdsStock = #{gdsStock},
+gdsImg = #{gdsImg},
+gdsThumbnail = #{gdsThumbnail},
+gdsInfo = #{gdsInfo}
+where gdsNum = #{gdsNum}
+</update> 
+
+<!-- 상품 삭제 -->
+<delete id="deleteShopItem">
+delete from shop_goods
+where gdsNum = #{gdsNum}
+</delete>
+
+
+
+<!-- 모든유저 주문 목록 확인 -->
+<select id = "orderedList" resultType="org.zerock.domain.OrderVO">
+select * from shop_order 
+</select>
+
+<!-- 특정 주문 확인  / 재고 조절시 상품 번호 참조 -->
+<select id = "orderedView" resultType="org.zerock.domain.OrderListVO">
+select o.orderId, o.userId, o.orderRec, o.postCode, o.userAddr1, o.userAddr2, o.orderPhone, o.amount, o.orderDate, o.deliveryStatus,
+		d.orderDetailsNum, d.gdsNum, d.cartStock,
+		g.gdsName, g.gdsImg, g.gdsPrice
+	from shop_order o
+		inner join shop_order_details d
+			on o.orderId = d.orderId
+		inner join shop_goods g
+			on d.gdsNum = g.gdsNum
+	where o.orderId = #{orderId}
+</select>
+<!-- 배송상태 -->
+<update id='deliveryStatus'>
+update shop_order 
+	set deliveryStatus = #{deliveryStatus}
+where orderId = #{orderId}
+</update>
+<!-- 배송시 재고 조절 -->
+<update id = 'changeStock'>
+update shop_goods 
+	set gdsStock = gdsStock - #{gdsStock}
+	where gdsNum = #{gdsNum}
+</update>
+
+<!-- 모든 상품 소감 확인 -->
+<select id = 'allReview' resultType='org.zerock.domain.ReviewListVO'>
+select r.gdsNum, r.userId, r.reviewNum, r.reviewCon, r.reviewDate, m.userName 
+from shop_review r
+inner join shop_member m 
+where m.userId = r.userId
+order by r.reviewNum
+desc;
+</select>
+<!-- 상품 소감 지우기 -->
+<delete id = 'deleteReview'>
+delete from shop_review where reviewNum = #{reviewNum}
+</delete>
+<!-- 멤버 관리  -->
+
+<!-- 멤버 삭제  -->
+<delete id="deleteUser">
+delete from shop_member
+where userId = #{userid}
+</delete>
+<!-- 멤버 권한 관리 -->
+<update id="updateAuth">
+update shop_member_auth
+set
+auth = #{auth}
+where userId = #{userid}
+</update>
+</mapper>

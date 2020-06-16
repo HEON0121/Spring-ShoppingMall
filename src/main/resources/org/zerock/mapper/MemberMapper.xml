@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.zerock.mapper.MemberMapper">
+<resultMap type="org.zerock.domain.MemberVO" id="memberMap">
+	<id property="userid" column="userid"/>
+	
+</resultMap>
+<!-- 회원 가입 -->
+<insert id = "SignUp">
+	insert into shop_member 
+	(
+	userid, userpw, username, userphone, postcode, useraddr1, useraddr2, usergender, userbirth, useremail, enabled
+	)
+	values(
+	#{userid}, #{userpw},#{userName},#{userPhone},#{userPostcode},#{userAddress},#{userAddress2},#{userGender},#{userBirth},#{userEmail}, 1
+	)
+</insert>
+<!-- 가입 시 권한 부여하기(일반 유저만) -->
+<insert id="insertAuth">
+	insert into shop_member_auth
+	(
+	userid, auth
+	)
+	values(
+	#{userid}, 'ROLE_MEMBER'
+	)
+</insert>
+<!-- 아아디 중복 체크  -->
+<select id="idCheck" parameterType="String" resultType="int">
+	select count(*) from shop_member 
+	where userid = #{userid}
+</select>
+<!-- 로그인 -->
+<select id = "read" resultType="org.zerock.domain.MemberVO">
+	select * from shop_member where userid = #{userId}
+</select> 
+<!-- 마이 페이지  -->
+<select id = "myPage" resultType="org.zerock.domain.MemberVO"> 
+	select * from shop_member where userId = #{userId}
+</select> 
+<!-- 마이 페이지 회원 정보  수정  -->
+<update id ="myPageUpdate">
+	update shop_member set 
+							userPw = #{userpw},
+							userName = #{userName},
+							userPhone = #{userPhone},
+							postCode = #{userPostCode},
+							useraddr1 = #{userAddress},
+							useraddr2 = #{userAddress2}
+			where userId = #{userid}								 
+</update>
+
+<!-- 상품 리뷰 댓글 달기  -->
+<insert id="review" parameterType="org.zerock.domain.ReviewVO">
+	insert into shop_review (
+		gdsNum, userId, reviewCon
+	) values (
+		#{gdsNum},#{userId},#{reviewCon}
+	)
+</insert>
+
+<!-- 상품 리뷰 삭제하기 -->
+<delete id="reviewDelete">
+delete from shop_review
+where userId = #{userId}
+and reviewNum = #{reviewNum}
+</delete>
+<!-- 상품 리뷰 수정 삭제 권한 사용자 확인  -->
+<select id="reviewUserCheck" resultType="String">
+select userId
+from shop_review
+where reviewNum = #{reviewNum}
+</select>
+<!-- 상품 리뷰 수정하기 -->
+<update id="reviewUpdate" parameterType="org.zerock.domain.ReviewVO">
+update shop_review set reviewCon=#{reviewCon}
+where userId = #{userId} and reviewNum = #{reviewNum}
+</update>
+<!--   -->
+		
+<!-- 장바구니 카트 담기 -->
+<insert id="addCart" parameterType="org.zerock.domain.CartVO">
+	insert into shop_cart(
+	userId, gdsNum, cartStock
+	)values (
+	#{userId},#{gdsNum},#{cartStock}
+	)
+</insert>
+
+<!-- 장바구니 카트 삭제하기 -->
+<delete id="deleteCart">
+delete from shop_cart
+where cartNum = #{cartNum}
+and userId = #{userId}
+</delete>
+
+<!-- 장바구니 목록 -->
+<select id="cartList" resultType="org.zerock.domain.CartItemVO">
+	select 
+    c.cartNum, c.userId, c.gdsNum, c.cartStock, c.addDate,
+	g.gdsName, g.gdsPrice, g.gdsImg
+    from shop_cart c 
+		inner join shop_goods g
+			on c.gdsNum = g.gdsNum
+    where userId = #{userId}
+    order by c.cartNum desc;
+</select>
+<!-- 상품 주문 정보 -->
+<insert id="order" parameterType="org.zerock.domain.OrderVO">
+insert into shop_order(orderId, userId, orderRec, postCode, userAddr1, userAddr2, orderPhone, amount)
+values(#{orderId},#{userId},#{orderRec},#{postCode},#{userAddr1},#{userAddr2},#{orderPhone},#{amount})
+</insert>
+<!-- 상품 주문 상세정보 -->
+<insert id="orderDetails" parameterType="org.zerock.domain.OrderDetailsVO">
+insert into shop_order_details(orderId, gdsNum, cartStock)
+select #{orderId}, gdsNum, cartStock from shop_cart
+</insert>
+<!-- 주문 후 장바구니 삭제 -->
+<delete id="cartAllDelete">
+delete from shop_cart
+where userId = #{userId}
+</delete>
+<!-- 유저의 주문 물품 리스트 -->
+<select id="orderedList" resultType="org.zerock.domain.OrderVO">
+select * from shop_order 
+where userId = #{userId}
+</select>
+<!-- 주문 번호 클릭 시 주문한 특정 물품 조회 -->
+<select id="orderedView" resultType="org.zerock.domain.OrderListVO">
+select o.orderId, o.userId, o.orderRec, o.postCode, o.userAddr1, o.userAddr2, o.orderPhone, o.amount, o.orderDate, o.deliveryStatus,
+		d.orderDetailsNum, d.gdsNum, d.cartStock,
+		g.gdsName, g.gdsImg, g.gdsPrice
+	from shop_order o
+		inner join shop_order_details d
+			on o.orderId = d.orderId
+		inner join shop_goods g
+			on d.gdsNum = g.gdsNum
+	where o.userId = #{userId}
+		and o.orderId = #{orderId}				 
+</select>
+
+</mapper>
